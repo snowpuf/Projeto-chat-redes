@@ -1,0 +1,60 @@
+import socket as sock
+import threading
+
+# Configurações de conexão com o servidor
+HOST = '127.0.0.1'  # Deve ser o mesmo IP do servidor
+PORTA = 9999
+
+# Criação do socket para o cliente
+socket_cliente = sock.socket(sock.AF_INET, sock.SOCK_STREAM)
+socket_cliente.connect((HOST, PORTA))
+print(5 * "*" + " Chat Iniciado " + 5 * "*")
+
+# Cliente entra com o nome e envia para o servidor
+nome = input("Informe seu nome para entrar no chat: ")
+socket_cliente.sendall((nome + "\n").encode())
+
+# Função para receber mensagens do servidor
+def receber_mensagens():
+    while True:
+        try:
+            # Recebe a mensagem do servidor
+            mensagem = socket_cliente.recv(1024).decode()
+            if mensagem:
+                print(mensagem)
+            else:
+                # Conexão fechada pelo servidor
+                print("Conexão com o servidor foi encerrada.")
+                socket_cliente.close()
+                break
+        except Exception as e:
+            print(f"Erro ao receber mensagem do servidor: {e}")
+            socket_cliente.close()
+            break
+
+# Função para enviar mensagens para o servidor
+def enviar_mensagens():
+    while True:
+        mensagem = input()
+        
+        # Comando para sair
+        if mensagem.strip().lower() == "/sair":
+            socket_cliente.sendall(mensagem.encode())
+            print("Você saiu do chat.")
+            socket_cliente.close()
+            break
+
+        # Envia a mensagem para o servidor
+        try:
+            socket_cliente.sendall(mensagem.encode())
+        except Exception as e:
+            print(f"Erro ao enviar mensagem para o servidor: {e}")
+            socket_cliente.close()
+            break
+
+# Iniciar threads para enviar e receber mensagens simultaneamente
+thread_receber = threading.Thread(target=receber_mensagens)
+thread_receber.start()
+
+thread_enviar = threading.Thread(target=enviar_mensagens)
+thread_enviar.start()
